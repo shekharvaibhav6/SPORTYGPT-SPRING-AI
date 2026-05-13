@@ -76,7 +76,7 @@ sportygpt/│├── backend/│   ├── 🎮 controller/│   ├── �
 
 ⚙️ ❖ Installation
 📥 Clone Repository
-git clone (https://github.com/shekharvaibhav6/SportyGPT-Spring-AI-frontend)
+git clone https://github.com/shekharvaibhav6/SportyGPT-Spring-AI-frontend
 
 🔑 Configure Environment Variables
 OPENAI_API_KEY=your_api_keyDB_URL=jdbc:mysql://localhost:3306/sportygptDB_USERNAME=rootDB_PASSWORD=passwordJWT_SECRET=your_secret_key
