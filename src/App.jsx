@@ -4,11 +4,15 @@ import { chatIconSVG, userIconSVG, botIconSVG, sendIconSVG, plusIconSVG, menuIco
 
 function App() {
   const [input, setInput] = useState('')
-  const [messages, setMessages] = useState([])
-  const [loading, setLoading] = useState(false)
-  const [sidebarOpen, setSidebarOpen] = useState(false)
-  const messagesEndRef = useRef(null)
-  const textareaRef = useRef(null)
+const [messages, setMessages] = useState([])
+const [loading, setLoading] = useState(false)
+const [sidebarOpen, setSidebarOpen] = useState(false)
+const [selectedFile, setSelectedFile] = useState(null)
+
+const messagesEndRef = useRef(null)
+const textareaRef = useRef(null)
+const fileInputRef = useRef(null)
+  
   
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -17,6 +21,13 @@ function App() {
   useEffect(() => {
     scrollToBottom()
   }, [messages])
+  useEffect(() => {
+    const savedMessages = localStorage.getItem("chatHistory");
+
+    if (savedMessages) {
+        setMessages(JSON.parse(savedMessages));
+    }
+}, []);
   
   // Auto-resize textarea
   useEffect(() => {
@@ -26,10 +37,16 @@ function App() {
       textarea.style.height = `${textarea.scrollHeight}px`
     }
   }, [input])
+  useEffect(() => {
+    localStorage.setItem(
+        "chatHistory",
+        JSON.stringify(messages)
+    );
+}, [messages]);
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!input.trim()) return
+    if (!input.trim() && !selectedFile) return;
 
     // Add user message
     const userMessage = { role: 'user', content: input }
@@ -44,9 +61,20 @@ function App() {
 
     try {
 
-      const encodedMessage = encodeURIComponent(input)
-      const response = await fetch(`/api/${encodedMessage}`)
-      const data = await response.text()
+      const formData = new FormData();
+
+formData.append("message", input);
+
+if (selectedFile) {
+    formData.append("file", selectedFile);
+}
+
+const response = await fetch("/api/chat", {
+    method: "POST",
+    body: formData,
+});
+
+const data = await response.text();
 
       // Add bot message
       setMessages(prevMessages => [
@@ -62,6 +90,7 @@ function App() {
     }
 
     setLoading(false)
+    setSelectedFile(null);
   }
   
   const handleKeyDown = (e) => {
@@ -76,8 +105,9 @@ function App() {
   }
   
   const startNewChat = () => {
-    setMessages([])
-  }
+    setMessages([]);
+    localStorage.removeItem("chatHistory");
+}
 
   return (
     <div className="chat-container">
@@ -146,11 +176,31 @@ function App() {
               </div>
             </div>
           )}
+          
           <div ref={messagesEndRef} />
         </div>
 
         <div className="input-container">
+        {selectedFile && (
+        <div className="selected-file">
+            📄 {selectedFile.name}
+        </div>
+    )}
           <form onSubmit={handleSubmit}>
+          <button
+    type="button"
+    onClick={() => fileInputRef.current.click()}
+    className="attach-button"
+>
+    📎
+</button>
+
+<input
+    type="file"
+    ref={fileInputRef}
+    style={{ display: "none" }}
+    onChange={(e) => setSelectedFile(e.target.files[0])}
+/>
             <textarea
               ref={textareaRef}
               value={input}
@@ -160,11 +210,11 @@ function App() {
               className="message-input"
               rows="1"
             />
-            <button 
-              type="submit" 
-              className="send-button"
-              disabled={!input.trim() || loading}
-            >
+            <button
+  type="submit"
+  className="send-button"
+  disabled={(!input.trim() && !selectedFile) || loading}
+>
               <div dangerouslySetInnerHTML={{ __html: sendIconSVG }} />
             </button>
           </form>
